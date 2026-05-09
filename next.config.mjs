@@ -2,13 +2,7 @@
 const nextConfig = {
   output: "standalone",
   experimental: {
-    serverComponentsExternalPackages: ["better-sqlite3", "bcryptjs"],
-  },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals = [...(config.externals || []), "better-sqlite3"];
-    }
-    return config;
+    serverComponentsExternalPackages: ["@prisma/client", "bcryptjs"],
   },
 };
 

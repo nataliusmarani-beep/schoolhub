@@ -37,3 +37,11 @@ next-env.d.ts
 
 # local database (Railway uses a volume, not the repo)
 /data/
+
+# env
+.env
+
+# Prisma generated client (built on deploy)
+/src/generated/prisma/
+
+/src/generated/prisma

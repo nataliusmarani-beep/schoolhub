@@ -1,32 +1,39 @@
 import { auth } from "@/lib/auth";
-import db from "@/lib/db";
+import prisma from "@/lib/prisma";
 import Topbar from "@/components/shared/Topbar";
 import InventoryClient from "@/components/modules/inventory/InventoryClient";
-import type { InventoryItem } from "@/types";
 
 export default async function InventoryPage() {
   const session = await auth();
-  const user = session?.user as any;
-  const schoolId = Number(user?.schoolId);
+  const schoolId = (session?.user as any)?.schoolId;
 
-  const items = db.prepare(`
-    WITH enriched AS (
-      SELECT *,
-        CASE
-          WHEN quantity = 0 THEN 'out_of_stock'
-          WHEN quantity <= min_threshold THEN 'low_stock'
-          ELSE 'ok'
-        END AS status
-      FROM inventory_items
-      WHERE school_id = ?
-    )
-    SELECT * FROM enriched ORDER BY name
-  `).all(schoolId) as InventoryItem[];
+  const [items, categories] = await Promise.all([
+    prisma.inventoryItem.findMany({
+      where: { schoolId },
+      include: { category: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.inventoryCategory.findMany({
+      where: { schoolId },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const enriched = items.map((item) => ({
+    ...item,
+    status: (
+      item.quantity === 0
+        ? "out_of_stock"
+        : item.quantity <= item.minThreshold
+        ? "low_stock"
+        : "ok"
+    ) as "ok" | "low_stock" | "out_of_stock",
+  }));
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <Topbar title="Inventaris" />
-      <InventoryClient initialItems={items} schoolId={schoolId} />
+      <InventoryClient initialItems={enriched} categories={categories} schoolId={schoolId} />
     </div>
   );
 }

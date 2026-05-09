@@ -1,89 +1,34 @@
-export type Role =
-  | "SUPER_ADMIN"
-  | "SCHOOL_ADMIN"
-  | "PRINCIPAL"
-  | "TEACHER"
-  | "STAFF"
-  | "STUDENT"
-  | "PARENT";
+// Re-export Prisma enums and extend with app-specific types
+export type { UserRole, SchoolType, AttendanceStatus, GradeType, ItemCondition, DocumentStatus, EmployeeStatus } from "@/generated/prisma";
 
-export interface School {
-  id: number;
+export interface EnrichedInventoryItem {
+  id: string;
+  schoolId: string;
   name: string;
-  slug: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  logo_url?: string;
-  created_at: string;
-}
-
-export interface User {
-  id: number;
-  school_id: number;
-  name: string;
-  email: string;
-  role: Role;
-  avatar_url?: string;
-  active: boolean;
-  created_at: string;
-}
-
-export interface Student {
-  id: number;
-  user_id: number;
-  class_id?: number;
-  nis?: string;
-  birth_date?: string;
-  gender?: string;
-  address?: string;
-  parent_id?: number;
-  name: string;
-  email: string;
-}
-
-export interface InventoryItem {
-  id: number;
-  school_id: number;
-  name: string;
-  code?: string;
-  category: string;
+  code: string | null;
+  categoryId: string | null;
   quantity: number;
   unit: string;
-  min_threshold: number;
-  location?: string;
-  condition: "Good" | "Fair" | "Poor";
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  status?: "ok" | "low_stock" | "out_of_stock";
+  minThreshold: number;
+  condition: string;
+  location: string | null;
+  description: string | null;
+  purchaseDate: Date | null;
+  purchasePrice: number | null;
+  imageUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  status: "ok" | "low_stock" | "out_of_stock";
+  category?: { id: string; name: string; icon: string | null } | null;
 }
 
-export interface AttendanceRecord {
-  id: number;
-  student_id: number;
-  class_id: number;
-  date: string;
-  status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
-  notes?: string;
-}
-
-export interface Grade {
-  id: number;
-  student_id: number;
-  subject_id: number;
-  type: "DAILY" | "MID" | "FINAL";
-  score: number;
-  max_score: number;
-  semester: number;
-}
-
-export interface Announcement {
-  id: number;
-  school_id: number;
-  author_id: number;
-  title: string;
-  body: string;
-  audience: string;
-  created_at: string;
+export interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  schoolId: string;
+  schoolSlug: string;
+  schoolName: string;
+  image?: string | null;
 }

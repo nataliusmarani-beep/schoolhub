@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { InventoryItem } from "@/types";
+import type { EnrichedInventoryItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Plus, Search, Package, AlertTriangle } from "lucide-react";
 
-const CATEGORIES = [
-  "Stationery", "Housekeeping", "Learning Tools", "Groceries",
-  "Art & Craft", "Uniform", "Sport Equipment", "Tools", "Medical/First Aid",
-];
+interface Category { id: string; name: string; icon: string | null; }
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "out_of_stock") return <Badge variant="destructive">Habis</Badge>;
@@ -21,29 +18,32 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="secondary">OK</Badge>;
 }
 
+const CONDITIONS = ["BAIK", "RUSAK_RINGAN", "RUSAK_BERAT", "HILANG"] as const;
+
 interface Props {
-  initialItems: InventoryItem[];
-  schoolId: number;
+  initialItems: EnrichedInventoryItem[];
+  categories: Category[];
+  schoolId: string;
 }
 
-export default function InventoryClient({ initialItems, schoolId }: Props) {
+export default function InventoryClient({ initialItems, categories, schoolId }: Props) {
   const [items, setItems] = useState(initialItems);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<InventoryItem | null>(null);
+  const [editing, setEditing] = useState<EnrichedInventoryItem | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", code: "", category: CATEGORIES[0], quantity: 0,
-    unit: "pcs", min_threshold: 5, location: "", condition: "Good", description: "",
+    name: "", code: "", categoryId: "", quantity: 0,
+    unit: "pcs", minThreshold: 5, location: "", condition: "BAIK", description: "",
   });
 
   const filtered = useMemo(() => {
     return items.filter((item) => {
       const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
         (item.code ?? "").toLowerCase().includes(search.toLowerCase());
-      const matchCat = categoryFilter === "all" || item.category === categoryFilter;
+      const matchCat = categoryFilter === "all" || item.categoryId === categoryFilter;
       const matchStat = statusFilter === "all" || item.status === statusFilter;
       return matchSearch && matchCat && matchStat;
     });
@@ -51,15 +51,15 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: "", code: "", category: CATEGORIES[0], quantity: 0, unit: "pcs", min_threshold: 5, location: "", condition: "Good", description: "" });
+    setForm({ name: "", code: "", categoryId: "", quantity: 0, unit: "pcs", minThreshold: 5, location: "", condition: "BAIK", description: "" });
     setShowForm(true);
   }
 
-  function openEdit(item: InventoryItem) {
+  function openEdit(item: EnrichedInventoryItem) {
     setEditing(item);
     setForm({
-      name: item.name, code: item.code ?? "", category: item.category,
-      quantity: item.quantity, unit: item.unit, min_threshold: item.min_threshold,
+      name: item.name, code: item.code ?? "", categoryId: item.categoryId ?? "",
+      quantity: item.quantity, unit: item.unit, minThreshold: item.minThreshold,
       location: item.location ?? "", condition: item.condition, description: item.description ?? "",
     });
     setShowForm(true);
@@ -86,7 +86,7 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
     setSaving(false);
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!confirm("Hapus item ini?")) return;
     await fetch(`/api/inventory/${id}`, { method: "DELETE" });
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -96,7 +96,6 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
 
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-      {/* Summary */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex gap-3">
           <div className="bg-white border rounded-lg px-4 py-2 text-center">
@@ -104,7 +103,7 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
             <p className="text-xs text-muted-foreground">Total Item</p>
           </div>
           {lowCount > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 text-center flex items-center gap-2">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-orange-500" />
               <div>
                 <p className="text-xl font-bold text-orange-700">{lowCount}</p>
@@ -118,31 +117,17 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
         </Button>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="p-3 flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Cari nama atau kode..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <Input className="pl-9" placeholder="Cari nama atau kode..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <select
-            className="border rounded-md px-3 py-2 text-sm bg-white"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
+          <select className="border rounded-md px-3 py-2 text-sm bg-white" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
             <option value="all">Semua Kategori</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <select
-            className="border rounded-md px-3 py-2 text-sm bg-white"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
+          <select className="border rounded-md px-3 py-2 text-sm bg-white" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">Semua Status</option>
             <option value="ok">OK</option>
             <option value="low_stock">Kritis</option>
@@ -151,7 +136,6 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -176,13 +160,13 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{item.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{item.code ?? "-"}</td>
-                      <td className="px-4 py-3">{item.category}</td>
+                      <td className="px-4 py-3">{item.category?.name ?? "-"}</td>
                       <td className="px-4 py-3 font-semibold">{item.quantity}</td>
                       <td className="px-4 py-3 text-muted-foreground">{item.unit}</td>
                       <td className="px-4 py-3 text-muted-foreground">{item.location ?? "-"}</td>
                       <td className="px-4 py-3">
-                        <Badge variant={item.condition === "Good" ? "secondary" : item.condition === "Fair" ? "outline" : "destructive"}>
-                          {item.condition}
+                        <Badge variant={item.condition === "BAIK" ? "secondary" : item.condition === "RUSAK_RINGAN" ? "outline" : "destructive"}>
+                          {item.condition.replace("_", " ")}
                         </Badge>
                       </td>
                       <td className="px-4 py-3"><StatusBadge status={item.status ?? "ok"} /></td>
@@ -201,7 +185,6 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
         </CardContent>
       </Card>
 
-      {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -214,12 +197,13 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
             </div>
             <div className="space-y-1">
               <Label>Kode</Label>
-              <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="STN-001" />
+              <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="ATK-001" />
             </div>
             <div className="space-y-1">
               <Label>Kategori</Label>
-              <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+                <option value="">Tanpa Kategori</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div className="space-y-1">
@@ -232,12 +216,12 @@ export default function InventoryClient({ initialItems, schoolId }: Props) {
             </div>
             <div className="space-y-1">
               <Label>Min. Stok</Label>
-              <Input type="number" value={form.min_threshold} onChange={(e) => setForm({ ...form, min_threshold: Number(e.target.value) })} />
+              <Input type="number" value={form.minThreshold} onChange={(e) => setForm({ ...form, minThreshold: Number(e.target.value) })} />
             </div>
             <div className="space-y-1">
               <Label>Kondisi</Label>
               <select className="w-full border rounded-md px-3 py-2 text-sm" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}>
-                <option>Good</option><option>Fair</option><option>Poor</option>
+                {CONDITIONS.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
               </select>
             </div>
             <div className="col-span-2 space-y-1">

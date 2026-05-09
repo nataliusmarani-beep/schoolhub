@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
-import db from "./db";
+import prisma from "./prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -15,28 +15,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = db
-          .prepare("SELECT * FROM users WHERE email = ? AND active = 1")
-          .get(credentials.email as string) as any;
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+          include: { school: true },
+        });
 
-        if (!user) return null;
+        if (!user || !user.isActive) return null;
 
         const ok = await bcrypt.compare(credentials.password as string, user.password);
         if (!ok) return null;
 
-        const school = db
-          .prepare("SELECT * FROM schools WHERE id = ?")
-          .get(user.school_id) as any;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
 
         return {
-          id: String(user.id),
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
-          schoolId: String(user.school_id),
-          schoolSlug: school?.slug ?? "",
-          schoolName: school?.name ?? "",
-          image: user.avatar_url ?? null,
+          schoolId: user.schoolId,
+          schoolSlug: user.school.slug,
+          schoolName: user.school.name,
+          image: user.avatarUrl ?? null,
         };
       },
     }),

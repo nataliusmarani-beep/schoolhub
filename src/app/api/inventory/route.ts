@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import db from "@/lib/db";
+import prisma from "@/lib/prisma";
+import { ItemCondition } from "@/generated/prisma";
 
 function enrich(item: any) {
   return {
@@ -8,7 +9,7 @@ function enrich(item: any) {
     status:
       item.quantity === 0
         ? "out_of_stock"
-        : item.quantity <= item.min_threshold
+        : item.quantity <= item.minThreshold
         ? "low_stock"
         : "ok",
   };
@@ -17,19 +18,26 @@ function enrich(item: any) {
 export async function GET(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const schoolId = Number((session.user as any).schoolId);
+  const schoolId = (session.user as any).schoolId;
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search") ?? "";
-  const category = searchParams.get("category") ?? "";
+  const categoryId = searchParams.get("categoryId") ?? "";
 
-  const items = db.prepare(`
-    SELECT * FROM inventory_items
-    WHERE school_id = ?
-      AND (? = '' OR name LIKE ? OR code LIKE ?)
-      AND (? = '' OR category = ?)
-    ORDER BY name
-  `).all(schoolId, search, `%${search}%`, `%${search}%`, category, category);
+  const items = await prisma.inventoryItem.findMany({
+    where: {
+      schoolId,
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { code: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+      ...(categoryId && { categoryId }),
+    },
+    include: { category: true },
+    orderBy: { name: "asc" },
+  });
 
   return NextResponse.json(items.map(enrich));
 }
@@ -37,16 +45,28 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const schoolId = Number((session.user as any).schoolId);
+  const schoolId = (session.user as any).schoolId;
 
   const body = await req.json();
-  const { name, code, category, quantity, unit, min_threshold, location, condition, description } = body;
+  const { name, code, categoryId, quantity, unit, minThreshold, location, condition, description, purchaseDate, purchasePrice } = body;
 
-  const result = db.prepare(`
-    INSERT INTO inventory_items (school_id, name, code, category, quantity, unit, min_threshold, location, condition, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(schoolId, name, code || null, category, quantity, unit, min_threshold, location || null, condition, description || null);
+  const item = await prisma.inventoryItem.create({
+    data: {
+      schoolId,
+      name,
+      code: code || null,
+      categoryId: categoryId || null,
+      quantity: Number(quantity),
+      unit,
+      minThreshold: Number(minThreshold),
+      location: location || null,
+      condition: (condition as ItemCondition) ?? ItemCondition.BAIK,
+      description: description || null,
+      purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
+      purchasePrice: purchasePrice ? Number(purchasePrice) : null,
+    },
+    include: { category: true },
+  });
 
-  const item = db.prepare("SELECT * FROM inventory_items WHERE id = ?").get(result.lastInsertRowid);
   return NextResponse.json(enrich(item), { status: 201 });
 }

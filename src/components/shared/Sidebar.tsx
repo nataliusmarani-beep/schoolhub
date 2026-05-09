@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { Role } from "@/types";
+import type { UserRole } from "@/generated/prisma";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ALL"] },
@@ -37,7 +37,7 @@ const navItems = [
 ];
 
 interface Props {
-  role: Role;
+  role: UserRole;
   schoolName: string;
 }
 
