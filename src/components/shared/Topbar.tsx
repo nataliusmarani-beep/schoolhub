@@ -43,6 +43,9 @@ const LABELS: Record<string, string> = {
   users: "Pengguna & Hak Akses",
   "academic-years": "Tahun Ajaran",
   website: "Website Sekolah",
+  pages: "Halaman Statis",
+  posts: "Berita & Artikel",
+  gallery: "Galeri Foto",
   lms: "Sinkronisasi LMS",
 };
 

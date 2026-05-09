@@ -19,8 +19,8 @@ import {
   Archive,
   School, CalendarDays, ShieldCheck,
   LogOut, ChevronLeft, ChevronRight, BookMarked,
+  FileText, Newspaper, Image,
 } from "lucide-react";
-import { useState } from "react";
 import type { UserRole } from "@/generated/prisma";
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
@@ -53,6 +53,9 @@ const NAV_GROUPS: NavGroup[] = [
     roles: ["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"],
     items: [
       { label: "Website Sekolah", href: "/dashboard/website", icon: Globe },
+      { label: "Halaman Statis", href: "/dashboard/website/pages", icon: FileText },
+      { label: "Berita & Artikel", href: "/dashboard/website/posts", icon: Newspaper },
+      { label: "Galeri Foto", href: "/dashboard/website/gallery", icon: Image },
       { label: "Sinkronisasi LMS", href: "/dashboard/lms", icon: RefreshCw },
     ],
   },

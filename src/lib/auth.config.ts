@@ -10,7 +10,12 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage =
         nextUrl.pathname === "/login" || nextUrl.pathname === "/register";
-      const isPublicSchoolPage = /^\/[a-z0-9-]+\/?$/.test(nextUrl.pathname);
+      const isPublicSchoolPage = /^\/[a-z0-9-]+(\/[a-z0-9-]*)*\/?$/.test(nextUrl.pathname) &&
+        !nextUrl.pathname.startsWith("/dashboard") &&
+        !nextUrl.pathname.startsWith("/api") &&
+        !nextUrl.pathname.startsWith("/login") &&
+        !nextUrl.pathname.startsWith("/register") &&
+        !nextUrl.pathname.startsWith("/forgot-password");
       const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
 
       if (isApiAuth || isPublicSchoolPage) return true;
