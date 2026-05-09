@@ -1,18 +1,13 @@
-import Topbar from "@/components/shared/Topbar";
 import { Card, CardContent } from "@/components/ui/card";
-
 export default function Page() {
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      <Topbar title="Pengaturan" />
-      <main className="flex-1 overflow-y-auto p-6">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-            <p className="font-medium">Modul Pengaturan</p>
-            <p className="text-sm">Segera hadir — Instruksi berikutnya akan melengkapi modul ini.</p>
-          </CardContent>
-        </Card>
-      </main>
+    <div className="p-4 md:p-6">
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
+          <p className="font-semibold text-gray-700">Segera hadir</p>
+          <p className="text-sm">Modul ini sedang dalam pengembangan.</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

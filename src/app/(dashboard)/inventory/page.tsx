@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import Topbar from "@/components/shared/Topbar";
 import InventoryClient from "@/components/modules/inventory/InventoryClient";
 
 export default async function InventoryPage() {
@@ -31,8 +30,7 @@ export default async function InventoryPage() {
   }));
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      <Topbar title="Inventaris" />
+    <div className="p-4 md:p-6">
       <InventoryClient initialItems={enriched} categories={categories} schoolId={schoolId} />
     </div>
   );
