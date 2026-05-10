@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Package, AlertTriangle } from "lucide-react";
+import { Plus, Search, Package, AlertTriangle, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/export";
 
 interface Category { id: string; name: string; icon: string | null; }
 
@@ -31,6 +32,7 @@ export default function InventoryClient({ initialItems, categories, schoolId }: 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [conditionFilter, setConditionFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<EnrichedInventoryItem | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,7 +47,8 @@ export default function InventoryClient({ initialItems, categories, schoolId }: 
         (item.code ?? "").toLowerCase().includes(search.toLowerCase());
       const matchCat = categoryFilter === "all" || item.categoryId === categoryFilter;
       const matchStat = statusFilter === "all" || item.status === statusFilter;
-      return matchSearch && matchCat && matchStat;
+      const matchCond = conditionFilter === "all" || item.condition === conditionFilter;
+      return matchSearch && matchCat && matchStat && matchCond;
     });
   }, [items, search, categoryFilter, statusFilter]);
 
@@ -112,9 +115,20 @@ export default function InventoryClient({ initialItems, categories, schoolId }: 
             </div>
           )}
         </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="h-4 w-4" /> Tambah Item
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => exportToExcel(
+            filtered.map((i) => ({
+              Kode: i.code ?? "-", Nama: i.name, Kategori: i.category?.name ?? "-",
+              Jumlah: i.quantity, Satuan: i.unit, Kondisi: i.condition.replace(/_/g, " "),
+              Lokasi: i.location ?? "-", Status: i.status,
+            })), "Inventaris"
+          )}>
+            <Download className="h-4 w-4" /> Export Excel
+          </Button>
+          <Button onClick={openAdd} className="gap-2">
+            <Plus className="h-4 w-4" /> Tambah Item
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -132,6 +146,13 @@ export default function InventoryClient({ initialItems, categories, schoolId }: 
             <option value="ok">OK</option>
             <option value="low_stock">Kritis</option>
             <option value="out_of_stock">Habis</option>
+          </select>
+          <select className="border rounded-md px-3 py-2 text-sm bg-white" value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)}>
+            <option value="all">Semua Kondisi</option>
+            <option value="BAIK">Baik</option>
+            <option value="RUSAK_RINGAN">Rusak Ringan</option>
+            <option value="RUSAK_BERAT">Rusak Berat</option>
+            <option value="HILANG">Hilang</option>
           </select>
         </CardContent>
       </Card>

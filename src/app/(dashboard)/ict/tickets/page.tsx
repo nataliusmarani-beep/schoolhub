@@ -1,13 +1,13 @@
-import { Card, CardContent } from "@/components/ui/card";
-export default function Page() {
+import HelpdeskTickets from "@/components/modules/ict/HelpdeskTickets";
+
+export default function TicketsPage() {
   return (
-    <div className="p-4 md:p-6">
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
-          <p className="font-semibold text-gray-700">Segera hadir</p>
-          <p className="text-sm">Modul ini sedang dalam pengembangan.</p>
-        </CardContent>
-      </Card>
+    <div className="p-4 md:p-6 space-y-4">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">IT Helpdesk</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Kelola tiket permintaan bantuan teknis IT</p>
+      </div>
+      <HelpdeskTickets />
     </div>
   );
 }

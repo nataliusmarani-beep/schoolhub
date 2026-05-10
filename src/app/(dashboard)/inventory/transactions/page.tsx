@@ -1,13 +1,13 @@
-import { Card, CardContent } from "@/components/ui/card";
-export default function Page() {
+import InventoryTransactions from "@/components/modules/inventory/InventoryTransactions";
+
+export default function TransactionsPage() {
   return (
-    <div className="p-4 md:p-6">
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
-          <p className="font-semibold text-gray-700">Segera hadir</p>
-          <p className="text-sm">Modul ini sedang dalam pengembangan.</p>
-        </CardContent>
-      </Card>
+    <div className="p-4 md:p-6 space-y-4">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">Transaksi Inventaris</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Log masuk, keluar, rusak, dan perbaikan barang</p>
+      </div>
+      <InventoryTransactions />
     </div>
   );
 }

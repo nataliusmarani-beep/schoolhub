@@ -30,7 +30,11 @@ export default async function InventoryPage() {
   }));
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6 space-y-4">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">Barang & Aset</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Kelola inventaris barang dan aset sekolah</p>
+      </div>
       <InventoryClient initialItems={enriched} categories={categories} schoolId={schoolId} />
     </div>
   );
